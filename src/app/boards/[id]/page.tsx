@@ -90,7 +90,16 @@ const DEMO_LISTS: List[] = [
 export default function BoardPage() {
     const params = useParams();
     const boardId = params.id as string;
-    const { setCurrentBoard, setLists, lists } = useBoardStore();
+    const { currentBoard, setCurrentBoard, setLists, lists } = useBoardStore();
+
+    // Update page title when board changes
+    useEffect(() => {
+        if (currentBoard?.name) {
+            document.title = `${currentBoard.name} | TaskFlow`;
+        } else {
+            document.title = "TaskFlow";
+        }
+    }, [currentBoard]);
 
     useEffect(() => {
         // Load board from localStorage
