@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { BoardCard } from "@/components/board";
 import { Button, Input, Modal } from "@/components/ui";
@@ -187,14 +188,14 @@ export default function DashboardPage() {
                         <Clock className="w-5 h-5" />
                         Recentes
                     </a>
-                    <a
-                        href="#"
+                    <Link
+                        href="/preferences"
                         onClick={closeSidebar}
                         className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#6B7280] hover:bg-[#F5F7F8] transition-colors"
                     >
                         <Settings className="w-5 h-5" />
                         Preferências
-                    </a>
+                    </Link>
                 </nav>
 
                 {/* User */}
@@ -344,8 +345,8 @@ export default function DashboardPage() {
                                     key={bg}
                                     onClick={() => setSelectedBackground(bg)}
                                     className={`h-10 rounded-xl transition-all ${selectedBackground === bg
-                                            ? "ring-2 ring-[#264653] ring-offset-2"
-                                            : "hover:scale-105"
+                                        ? "ring-2 ring-[#264653] ring-offset-2"
+                                        : "hover:scale-105"
                                         }`}
                                     style={{ background: bg }}
                                 />
