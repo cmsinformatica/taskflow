@@ -94,7 +94,7 @@ export function ListContainer({ list }: ListContainerProps) {
             ref={setNodeRef}
             style={style}
             className={cn(
-                "w-72 flex-shrink-0 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-3 max-h-[calc(100vh-200px)] flex flex-col",
+                "w-64 sm:w-72 flex-shrink-0 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-3 max-h-[calc(100vh-140px)] sm:max-h-[calc(100vh-200px)] flex flex-col",
                 {
                     "opacity-50": isDragging,
                 }
