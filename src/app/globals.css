@@ -1,34 +1,44 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Boardzen Color Palette */
+  --color-background: #F5F7F8;
+  --color-surface: #FFFFFF;
+  --color-primary: #264653;
+  --color-secondary: #2A9D8F;
+  --color-text: #2B2B2B;
+  --color-text-muted: #6B7280;
+  --color-border: #E0E0E0;
+  --color-accent: #E9C46A;
+  --color-success: #2A9D8F;
+  --color-warning: #E9C46A;
+  --color-error: #E76F51;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(38, 70, 83, 0.05);
+  --shadow-md: 0 4px 6px rgba(38, 70, 83, 0.07);
+  --shadow-lg: 0 10px 15px rgba(38, 70, 83, 0.1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Zen Style */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -36,47 +46,85 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
+  background: var(--color-border);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--color-text-muted);
 }
 
-/* Dark mode scrollbar */
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* Animations */
-@keyframes fade-in {
+/* Smooth Animations */
+@keyframes fadeIn {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
 }
 
-@keyframes zoom-in-95 {
+@keyframes slideUp {
   from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
     transform: scale(0.95);
   }
+
   to {
+    opacity: 1;
     transform: scale(1);
   }
 }
 
-.animate-in {
-  animation: fade-in 0.2s ease-out, zoom-in-95 0.2s ease-out;
+.animate-fade-in {
+  animation: fadeIn var(--transition-base) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp var(--transition-base) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn var(--transition-base) forwards;
 }
 
 /* Selection */
 ::selection {
-  background: rgba(59, 130, 246, 0.3);
+  background-color: var(--color-secondary);
+  color: white;
+}
+
+/* Focus styles - Zen */
+:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+/* Button transitions */
+button,
+a {
+  transition: all var(--transition-fast);
+}
+
+/* Card hover */
+.card-hover {
+  transition: all var(--transition-base);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }

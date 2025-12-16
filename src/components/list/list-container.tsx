@@ -25,6 +25,7 @@ export function ListContainer({ list }: ListContainerProps) {
     const [newCardTitle, setNewCardTitle] = useState("");
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [title, setTitle] = useState(list.name);
+    const [showMenu, setShowMenu] = useState(false);
 
     const { setNodeRef: setDroppableRef } = useDroppable({
         id: `list-${list.id}`,
@@ -81,9 +82,10 @@ export function ListContainer({ list }: ListContainerProps) {
     };
 
     const handleDeleteList = () => {
-        if (confirm("Tem certeza que deseja excluir esta lista e todos os cards?")) {
+        if (confirm("Tem certeza que deseja excluir esta lista?")) {
             deleteList(list.id);
         }
+        setShowMenu(false);
     };
 
     const cards = list.cards || [];
@@ -94,7 +96,7 @@ export function ListContainer({ list }: ListContainerProps) {
             ref={setNodeRef}
             style={style}
             className={cn(
-                "w-64 sm:w-72 flex-shrink-0 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-3 max-h-[calc(100vh-140px)] sm:max-h-[calc(100vh-200px)] flex flex-col",
+                "w-72 flex-shrink-0 bg-white rounded-2xl p-4 max-h-[calc(100vh-160px)] flex flex-col shadow-sm",
                 {
                     "opacity-50": isDragging,
                 }
@@ -104,7 +106,7 @@ export function ListContainer({ list }: ListContainerProps) {
             <div
                 {...attributes}
                 {...listeners}
-                className="flex items-center justify-between mb-3 cursor-grab active:cursor-grabbing"
+                className="flex items-center justify-between mb-4 cursor-grab active:cursor-grabbing"
             >
                 {isEditingTitle ? (
                     <Input
@@ -112,29 +114,41 @@ export function ListContainer({ list }: ListContainerProps) {
                         onChange={(e) => setTitle(e.target.value)}
                         onBlur={handleSaveTitle}
                         onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
-                        className="font-semibold"
+                        className="font-semibold border-[#E0E0E0] rounded-xl"
                         autoFocus
                     />
                 ) : (
                     <h3
                         onClick={() => setIsEditingTitle(true)}
-                        className="font-semibold text-gray-800 dark:text-gray-200 px-2 hover:bg-white/50 dark:hover:bg-gray-700/50 rounded-lg cursor-pointer"
+                        className="font-semibold text-[#264653] px-2 py-1 hover:bg-[#F5F7F8] rounded-lg cursor-pointer transition-colors"
                     >
                         {list.name}
                     </h3>
                 )}
-                <button
-                    onClick={handleDeleteList}
-                    className="p-1 rounded-lg hover:bg-white/50 dark:hover:bg-gray-700/50"
-                >
-                    <MoreHorizontal className="w-5 h-5 text-gray-500" />
-                </button>
+                <div className="relative">
+                    <button
+                        onClick={() => setShowMenu(!showMenu)}
+                        className="p-1.5 rounded-lg hover:bg-[#F5F7F8] transition-colors"
+                    >
+                        <MoreHorizontal className="w-5 h-5 text-[#6B7280]" />
+                    </button>
+                    {showMenu && (
+                        <div className="absolute right-0 top-8 bg-white rounded-xl shadow-lg border border-[#E0E0E0] py-2 min-w-[150px] z-10 animate-fade-in">
+                            <button
+                                onClick={handleDeleteList}
+                                className="w-full px-4 py-2 text-left text-sm text-[#E76F51] hover:bg-[#E76F51]/5 transition-colors"
+                            >
+                                Excluir lista
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Cards */}
             <div
                 ref={setDroppableRef}
-                className="flex-1 overflow-y-auto space-y-2 min-h-[50px]"
+                className="flex-1 overflow-y-auto space-y-3 min-h-[60px] scrollbar-thin"
             >
                 <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
                     {cards.map((card) => (
@@ -145,12 +159,12 @@ export function ListContainer({ list }: ListContainerProps) {
 
             {/* Add Card */}
             {isAddingCard ? (
-                <div className="mt-3 space-y-2">
+                <div className="mt-4 space-y-3">
                     <textarea
                         value={newCardTitle}
                         onChange={(e) => setNewCardTitle(e.target.value)}
-                        placeholder="Insira um título para o card..."
-                        className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none text-sm"
+                        placeholder="O que você precisa fazer?"
+                        className="w-full p-3 rounded-xl border border-[#E0E0E0] bg-white text-[#2B2B2B] placeholder:text-[#6B7280] focus:border-[#2A9D8F] focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/20 resize-none text-sm transition-all"
                         rows={3}
                         autoFocus
                         onKeyDown={(e) => {
@@ -161,27 +175,31 @@ export function ListContainer({ list }: ListContainerProps) {
                         }}
                     />
                     <div className="flex items-center gap-2">
-                        <Button onClick={handleAddCard} size="sm">
-                            Adicionar card
+                        <Button
+                            onClick={handleAddCard}
+                            size="sm"
+                            className="bg-[#2A9D8F] hover:bg-[#238b80] rounded-xl"
+                        >
+                            Adicionar
                         </Button>
                         <button
                             onClick={() => {
                                 setIsAddingCard(false);
                                 setNewCardTitle("");
                             }}
-                            className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+                            className="p-2 rounded-xl hover:bg-[#F5F7F8] transition-colors"
                         >
-                            <X className="w-5 h-5 text-gray-500" />
+                            <X className="w-5 h-5 text-[#6B7280]" />
                         </button>
                     </div>
                 </div>
             ) : (
                 <button
                     onClick={() => setIsAddingCard(true)}
-                    className="mt-3 w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors text-sm"
+                    className="mt-4 w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[#6B7280] hover:bg-[#F5F7F8] hover:text-[#2A9D8F] transition-colors text-sm"
                 >
                     <Plus className="w-4 h-4" />
-                    Adicionar um card
+                    Adicionar cartão
                 </button>
             )}
         </div>

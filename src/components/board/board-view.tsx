@@ -24,7 +24,7 @@ import { useBoardStore } from "@/store/board-store";
 import { ListContainer } from "@/components/list";
 import { CardModal } from "@/components/card";
 import { Button, Input } from "@/components/ui";
-import { Plus, X, Settings, Users, Star, ArrowLeft, MoreHorizontal } from "lucide-react";
+import { Plus, X, ArrowLeft, MoreHorizontal, LayoutGrid } from "lucide-react";
 import { List, Card } from "@/types";
 
 export function BoardView() {
@@ -174,46 +174,38 @@ export function BoardView() {
         <div
             className="h-screen flex flex-col"
             style={{
-                background: currentBoard?.background || "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                background: currentBoard?.background || "#264653",
             }}
         >
             {/* Board Header */}
-            <header className="px-3 sm:px-6 py-3 sm:py-4 bg-black/20 backdrop-blur-sm">
+            <header className="px-4 sm:px-6 py-3 sm:py-4 bg-black/10 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
                         <Link
                             href="/dashboard"
-                            className="p-2 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+                            className="p-2 rounded-xl hover:bg-white/20 text-white/80 hover:text-white transition-colors"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </Link>
-                        <h1 className="text-lg sm:text-xl font-bold text-white truncate max-w-[150px] sm:max-w-none">
-                            {currentBoard?.name || "Meu Quadro"}
-                        </h1>
-                        <button className="hidden sm:block p-2 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-colors">
-                            <Star className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <div className="hidden sm:flex w-8 h-8 rounded-lg bg-white/20 items-center justify-center">
+                                <LayoutGrid className="w-4 h-4 text-white" />
+                            </div>
+                            <h1 className="text-lg sm:text-xl font-semibold text-white truncate max-w-[180px] sm:max-w-none">
+                                {currentBoard?.name || "Meu Quadro"}
+                            </h1>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 sm:gap-3">
-                        <Button
-                            variant="ghost"
-                            className="hidden lg:flex text-white hover:bg-white/20"
-                        >
-                            <Users className="w-4 h-4 mr-2" />
-                            Compartilhar
-                        </Button>
-                        <button className="p-2 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-colors lg:hidden">
+                    <div className="flex items-center gap-2">
+                        <button className="p-2 rounded-xl hover:bg-white/20 text-white/80 hover:text-white transition-colors">
                             <MoreHorizontal className="w-5 h-5" />
-                        </button>
-                        <button className="hidden lg:block p-2 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-colors">
-                            <Settings className="w-5 h-5" />
                         </button>
                     </div>
                 </div>
             </header>
 
             {/* Board Content */}
-            <main className="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-6">
+            <main className="flex-1 overflow-x-auto overflow-y-hidden p-4 sm:p-6">
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCorners}
@@ -221,7 +213,7 @@ export function BoardView() {
                     onDragOver={handleDragOver}
                     onDragEnd={handleDragEnd}
                 >
-                    <div className="flex gap-3 sm:gap-4 items-start h-full pb-4">
+                    <div className="flex gap-4 items-start h-full pb-4">
                         <SortableContext items={listIds} strategy={horizontalListSortingStrategy}>
                             {lists.map((list) => (
                                 <ListContainer key={list.id} list={list} />
@@ -230,11 +222,12 @@ export function BoardView() {
 
                         {/* Add List */}
                         {isAddingList ? (
-                            <div className="w-64 sm:w-72 flex-shrink-0 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-3">
+                            <div className="w-72 flex-shrink-0 bg-white rounded-2xl p-4 shadow-sm">
                                 <Input
                                     value={newListName}
                                     onChange={(e) => setNewListName(e.target.value)}
-                                    placeholder="Insira o título da lista..."
+                                    placeholder="Nome da lista..."
+                                    className="border-[#E0E0E0] rounded-xl mb-3"
                                     autoFocus
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter") handleAddList();
@@ -244,8 +237,12 @@ export function BoardView() {
                                         }
                                     }}
                                 />
-                                <div className="flex items-center gap-2 mt-2">
-                                    <Button onClick={handleAddList} size="sm">
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        onClick={handleAddList}
+                                        size="sm"
+                                        className="bg-[#264653] hover:bg-[#1d3640] rounded-xl"
+                                    >
                                         Adicionar lista
                                     </Button>
                                     <button
@@ -253,27 +250,27 @@ export function BoardView() {
                                             setIsAddingList(false);
                                             setNewListName("");
                                         }}
-                                        className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+                                        className="p-2 rounded-xl hover:bg-[#F5F7F8] transition-colors"
                                     >
-                                        <X className="w-5 h-5 text-gray-500" />
+                                        <X className="w-5 h-5 text-[#6B7280]" />
                                     </button>
                                 </div>
                             </div>
                         ) : (
                             <button
                                 onClick={() => setIsAddingList(true)}
-                                className="w-64 sm:w-72 flex-shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-medium transition-colors"
+                                className="w-72 flex-shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-medium transition-colors"
                             >
                                 <Plus className="w-5 h-5" />
-                                <span className="text-sm sm:text-base">Adicionar lista</span>
+                                <span>Adicionar lista</span>
                             </button>
                         )}
                     </div>
 
                     <DragOverlay>
                         {activeId && activeType === "list" && (
-                            <div className="w-64 sm:w-72 bg-gray-100/90 rounded-2xl p-3 shadow-2xl rotate-3">
-                                <div className="font-semibold text-gray-800 px-2">
+                            <div className="w-72 bg-white rounded-2xl p-4 shadow-lg rotate-2">
+                                <div className="font-semibold text-[#264653]">
                                     {lists.find((l) => `list-${l.id}` === activeId)?.name}
                                 </div>
                             </div>
@@ -282,7 +279,6 @@ export function BoardView() {
                 </DndContext>
             </main>
 
-            {/* Card Modal */}
             <CardModal />
         </div>
     );

@@ -1,48 +1,43 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "TaskFlow - Organize seus projetos",
-    template: "%s | TaskFlow",
+    default: "Boardzen - Organize com clareza",
+    template: "%s | Boardzen",
   },
   description:
-    "Portal de gerenciamento de tarefas no estilo Trello. Organize projetos, crie quadros, listas e cards com drag and drop.",
+    "Organize suas tarefas e projetos com tranquilidade. Um quadro Kanban pensado para clareza e produtividade.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "TaskFlow",
+    title: "Boardzen",
   },
   formatDetection: {
     telephone: false,
   },
   openGraph: {
     type: "website",
-    siteName: "TaskFlow",
-    title: "TaskFlow - Organize seus projetos",
-    description: "Portal de gerenciamento de tarefas no estilo Trello",
+    siteName: "Boardzen",
+    title: "Boardzen - Organize com clareza",
+    description: "Organize suas tarefas e projetos com tranquilidade",
   },
   twitter: {
     card: "summary",
-    title: "TaskFlow - Organize seus projetos",
-    description: "Portal de gerenciamento de tarefas no estilo Trello",
+    title: "Boardzen - Organize com clareza",
+    description: "Organize suas tarefas e projetos com tranquilidade",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#3b82f6",
+  themeColor: "#264653",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -60,7 +55,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon.svg" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="TaskFlow" />
+        <meta name="apple-mobile-web-app-title" content="Boardzen" />
         <meta name="mobile-web-app-capable" content="yes" />
         <script
           dangerouslySetInnerHTML={{
@@ -78,9 +73,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${inter.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>
