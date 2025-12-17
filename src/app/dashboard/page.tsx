@@ -50,54 +50,95 @@ export default function DashboardPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [user, setUser] = useState<{ email?: string; full_name?: string } | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
+    // Load boards from database
     useEffect(() => {
-        const getUser = async () => {
-            const { data } = await supabase.auth.getUser();
-            if (data.user) {
+        const loadData = async () => {
+            setIsLoading(true);
+
+            // Try to load from Supabase first
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+
+            if (authUser) {
+                // User is logged in, load from database
+                const { getBoards } = await import("@/lib/supabase/database");
+                const dbBoards = await getBoards();
+                if (dbBoards.length > 0) {
+                    setBoards(dbBoards);
+                }
                 setUser({
-                    email: data.user.email,
-                    full_name: data.user.user_metadata?.full_name,
+                    email: authUser.email,
+                    full_name: authUser.user_metadata?.full_name,
                 });
             } else {
-                // Check demo user
+                // Demo mode - use localStorage
                 const demoUser = localStorage.getItem("taskflow-demo-user");
                 if (demoUser) {
                     setUser(JSON.parse(demoUser));
                 }
+                const savedBoards = localStorage.getItem("taskflow-boards");
+                if (savedBoards) {
+                    try {
+                        const parsedBoards = JSON.parse(savedBoards);
+                        if (Array.isArray(parsedBoards)) {
+                            setBoards(parsedBoards);
+                        }
+                    } catch (e) {
+                        console.error("Error loading boards:", e);
+                    }
+                }
             }
-        };
-        getUser();
 
-        const savedBoards = localStorage.getItem("taskflow-boards");
-        if (savedBoards) {
-            setBoards(JSON.parse(savedBoards));
-        }
+            setIsLoading(false);
+        };
+
+        loadData();
     }, [supabase.auth]);
 
-    const handleCreateBoard = () => {
+    const handleCreateBoard = async () => {
         if (!newBoardName.trim()) return;
 
-        const newBoard: Board = {
-            id: crypto.randomUUID(),
-            workspace_id: "",
-            name: newBoardName.trim(),
-            background: selectedBackground,
-            is_public: false,
-            created_by: "",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-        };
+        const { data: { user: authUser } } = await supabase.auth.getUser();
 
-        const updatedBoards = [...boards, newBoard];
-        setBoards(updatedBoards);
-        localStorage.setItem("taskflow-boards", JSON.stringify(updatedBoards));
+        if (authUser) {
+            // Create in database
+            const { createBoard } = await import("@/lib/supabase/database");
+            const newBoard = await createBoard(newBoardName.trim(), selectedBackground);
 
-        setNewBoardName("");
-        setSelectedBackground(BOARD_BACKGROUNDS[0]);
-        setIsCreateModalOpen(false);
+            if (newBoard) {
+                setBoards((prev) => [...prev, newBoard]);
+                setNewBoardName("");
+                setSelectedBackground(BOARD_BACKGROUNDS[0]);
+                setIsCreateModalOpen(false);
+                router.push(`/boards/${newBoard.id}`);
+            }
+        } else {
+            // Demo mode - use localStorage
+            const newBoard: Board = {
+                id: crypto.randomUUID(),
+                workspace_id: "",
+                name: newBoardName.trim(),
+                background: selectedBackground,
+                is_public: false,
+                created_by: "",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
 
-        router.push(`/boards/${newBoard.id}`);
+            const savedBoards = localStorage.getItem("taskflow-boards");
+            const currentBoards: Board[] = savedBoards ? JSON.parse(savedBoards) : [];
+            const updatedBoards = [...currentBoards, newBoard];
+
+            setBoards(updatedBoards);
+            localStorage.setItem("taskflow-boards", JSON.stringify(updatedBoards));
+
+            setNewBoardName("");
+            setSelectedBackground(BOARD_BACKGROUNDS[0]);
+            setIsCreateModalOpen(false);
+
+            router.push(`/boards/${newBoard.id}`);
+        }
     };
 
     const handleLogout = async () => {
