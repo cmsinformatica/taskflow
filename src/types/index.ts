@@ -34,6 +34,26 @@ export interface List {
     is_archived: boolean;
     created_at: string;
     cards?: Card[];
+    // WIP Limit
+    wipLimit?: number | null;
+}
+
+// Recurring options
+export type RecurringType = "daily" | "weekly" | "monthly" | "custom" | null;
+
+export interface RecurringConfig {
+    type: RecurringType;
+    interval?: number; // every X days/weeks/months
+    daysOfWeek?: number[]; // 0-6 for custom weekly
+    nextOccurrence?: string; // ISO date
+}
+
+// Pomodoro timer
+export interface TimerState {
+    isRunning: boolean;
+    startedAt?: string;
+    totalSeconds: number; // accumulated time
+    pomodoroCount: number;
 }
 
 export interface Card {
@@ -51,6 +71,10 @@ export interface Card {
     members?: User[];
     checklists?: Checklist[];
     comments?: Comment[];
+    // New fields for Boardzen features
+    recurring?: RecurringConfig;
+    timer?: TimerState;
+    completedAt?: string; // for tracking daily achievements
 }
 
 export interface Label {
@@ -96,4 +120,16 @@ export interface Activity {
     metadata?: Record<string, unknown>;
     created_at: string;
     user?: User;
+}
+
+// Daily achievements
+export interface DailyAchievement {
+    date: string; // YYYY-MM-DD
+    completedCards: {
+        id: string;
+        title: string;
+        boardName: string;
+        completedAt: string;
+    }[];
+    totalPomodoros: number;
 }

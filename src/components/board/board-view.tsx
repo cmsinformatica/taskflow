@@ -22,7 +22,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useBoardStore } from "@/store/board-store";
 import { ListContainer } from "@/components/list";
-import { CardModal } from "@/components/card";
+import { CardModal, FocusMode } from "@/components/card";
 import { Button, Input } from "@/components/ui";
 import { Plus, X, ArrowLeft, MoreHorizontal, LayoutGrid } from "lucide-react";
 import { List, Card } from "@/types";
@@ -280,6 +280,7 @@ export function BoardView() {
             </main>
 
             <CardModal />
+            <FocusMode />
         </div>
     );
 }

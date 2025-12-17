@@ -8,10 +8,12 @@ import {
     Calendar,
     CheckSquare,
     MessageSquare,
-    Paperclip,
-    User,
+    Timer,
+    Focus,
+    Repeat,
 } from "lucide-react";
 import { useBoardStore } from "@/store/board-store";
+import { MiniTimer } from "./pomodoro-timer";
 
 interface CardItemProps {
     card: Card;
@@ -19,7 +21,7 @@ interface CardItemProps {
 }
 
 export function CardItem({ card, listId }: CardItemProps) {
-    const { setSelectedCard, setCardModalOpen } = useBoardStore();
+    const { setSelectedCard, setCardModalOpen, setFocusMode } = useBoardStore();
 
     const {
         attributes,
@@ -47,11 +49,28 @@ export function CardItem({ card, listId }: CardItemProps) {
         setCardModalOpen(true);
     };
 
+    const handleFocusMode = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setFocusMode(card.id, listId);
+    };
+
     const hasLabels = card.labels && card.labels.length > 0;
-    const hasMembers = card.members && card.members.length > 0;
     const hasChecklists = card.checklists && card.checklists.length > 0;
     const hasComments = card.comments && card.comments.length > 0;
     const hasDueDate = card.due_date;
+    const hasRecurring = card.recurring?.type;
+    const hasTimer = card.timer && (card.timer.isRunning || card.timer.totalSeconds > 0);
+
+    // Calculate checklist progress
+    const totalItems = card.checklists?.reduce(
+        (acc, cl) => acc + (cl.items?.length || 0),
+        0
+    ) || 0;
+    const completedItems = card.checklists?.reduce(
+        (acc, cl) => acc + (cl.items?.filter((i) => i.is_completed).length || 0),
+        0
+    ) || 0;
+    const progress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
     return (
         <div
@@ -61,12 +80,29 @@ export function CardItem({ card, listId }: CardItemProps) {
             {...listeners}
             onClick={handleClick}
             className={cn(
-                "group bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-100 dark:border-gray-700",
+                "group bg-white dark:bg-[#1e293b] rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-[#E0E0E0] dark:border-[#334155]",
                 {
-                    "opacity-50 shadow-lg ring-2 ring-blue-500": isDragging,
+                    "opacity-50 shadow-lg ring-2 ring-[#2A9D8F]": isDragging,
                 }
             )}
         >
+            {/* Progress Bar - visible without opening card */}
+            {hasChecklists && totalItems > 0 && (
+                <div className="mb-2">
+                    <div className="h-1.5 bg-[#E0E0E0] dark:bg-[#334155] rounded-full overflow-hidden">
+                        <div
+                            className={cn(
+                                "h-full transition-all duration-500 rounded-full",
+                                progress === 100
+                                    ? "bg-[#2A9D8F]"
+                                    : "bg-gradient-to-r from-[#2A9D8F]/50 to-[#2A9D8F]"
+                            )}
+                            style={{ width: `${progress}%` }}
+                        />
+                    </div>
+                </div>
+            )}
+
             {/* Labels */}
             {hasLabels && (
                 <div className="flex flex-wrap gap-1 mb-2">
@@ -81,12 +117,12 @@ export function CardItem({ card, listId }: CardItemProps) {
             )}
 
             {/* Title */}
-            <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+            <p className="text-sm font-medium text-[#2B2B2B] dark:text-white mb-2">
                 {card.title}
             </p>
 
             {/* Metadata */}
-            <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-3 text-xs text-[#6B7280]">
                 {hasDueDate && (
                     <span className="flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" />
@@ -98,18 +134,13 @@ export function CardItem({ card, listId }: CardItemProps) {
                 )}
 
                 {hasChecklists && (
-                    <span className="flex items-center gap-1">
+                    <span
+                        className={cn("flex items-center gap-1", {
+                            "text-[#2A9D8F]": progress === 100,
+                        })}
+                    >
                         <CheckSquare className="w-3.5 h-3.5" />
-                        {card.checklists?.reduce(
-                            (acc, cl) =>
-                                acc + (cl.items?.filter((i) => i.is_completed).length || 0),
-                            0
-                        )}
-                        /
-                        {card.checklists?.reduce(
-                            (acc, cl) => acc + (cl.items?.length || 0),
-                            0
-                        )}
+                        {completedItems}/{totalItems}
                     </span>
                 )}
 
@@ -119,26 +150,29 @@ export function CardItem({ card, listId }: CardItemProps) {
                         {card.comments?.length}
                     </span>
                 )}
+
+                {hasRecurring && (
+                    <span className="flex items-center gap-1 text-[#E9C46A]" title="Tarefa recorrente">
+                        <Repeat className="w-3.5 h-3.5" />
+                    </span>
+                )}
+
+                {hasTimer && (
+                    <MiniTimer
+                        isRunning={card.timer?.isRunning || false}
+                        totalSeconds={card.timer?.totalSeconds || 0}
+                    />
+                )}
             </div>
 
-            {/* Members */}
-            {hasMembers && (
-                <div className="flex -space-x-2 mt-2">
-                    {card.members?.slice(0, 3).map((member) => (
-                        <div
-                            key={member.id}
-                            className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-medium ring-2 ring-white dark:ring-gray-800"
-                        >
-                            {member.full_name?.[0] || member.email[0].toUpperCase()}
-                        </div>
-                    ))}
-                    {card.members && card.members.length > 3 && (
-                        <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 text-xs font-medium ring-2 ring-white dark:ring-gray-800">
-                            +{card.members.length - 3}
-                        </div>
-                    )}
-                </div>
-            )}
+            {/* Focus Mode Button - appears on hover */}
+            <button
+                onClick={handleFocusMode}
+                className="absolute top-2 right-2 p-1.5 rounded-lg bg-[#2A9D8F] text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-[#238b80]"
+                title="Modo Foco"
+            >
+                <Focus className="w-4 h-4" />
+            </button>
         </div>
     );
 }
