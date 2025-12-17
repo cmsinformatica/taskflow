@@ -16,8 +16,11 @@ import {
     Settings,
     Menu,
     X,
+    Crown,
 } from "lucide-react";
 import { Board } from "@/types";
+import { TrialBanner, TrialBadge } from "@/components/subscription";
+import { useSubscription } from "@/hooks/use-subscription";
 
 const BOARD_BACKGROUNDS = [
     "#264653",
@@ -196,7 +199,20 @@ export default function DashboardPage() {
                         <Settings className="w-5 h-5" />
                         Preferências
                     </Link>
+                    <Link
+                        href="/pricing"
+                        onClick={closeSidebar}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#2A9D8F] hover:bg-[#2A9D8F]/10 transition-colors"
+                    >
+                        <Crown className="w-5 h-5" />
+                        Planos
+                    </Link>
                 </nav>
+
+                {/* Trial Badge */}
+                <div className="mb-4">
+                    <TrialBadge />
+                </div>
 
                 {/* User */}
                 <div className="pt-5 border-t border-[#E0E0E0]">
@@ -222,6 +238,11 @@ export default function DashboardPage() {
                     </button>
                 </div>
             </aside>
+
+            {/* Trial Banner */}
+            <div className="lg:ml-64">
+                <TrialBanner />
+            </div>
 
             {/* Main Content */}
             <main className="pt-20 lg:pt-0 lg:ml-64 p-5 lg:p-8">
