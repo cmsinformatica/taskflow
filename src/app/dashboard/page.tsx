@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { BoardCard } from "@/components/board";
-import { Button, Input, Modal } from "@/components/ui";
+import { Button, Input, Modal, DailyAchievements } from "@/components/ui";
 import {
     Plus,
     Search,
@@ -255,6 +255,9 @@ export default function DashboardPage() {
                         </Button>
                     </div>
                 </div>
+
+                {/* Daily Achievements */}
+                <DailyAchievements />
 
                 {/* Empty State */}
                 {boards.length === 0 && (
