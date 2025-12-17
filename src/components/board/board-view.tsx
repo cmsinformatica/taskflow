@@ -57,20 +57,36 @@ export function BoardView() {
         useSensor(KeyboardSensor)
     );
 
-    const handleAddList = () => {
-        if (!newListName.trim()) return;
+    const handleAddList = async () => {
+        if (!newListName.trim() || !currentBoard?.id) return;
 
-        const newList: List = {
-            id: crypto.randomUUID(),
-            board_id: currentBoard?.id || "",
-            name: newListName.trim(),
-            position: lists.length + 1,
-            is_archived: false,
-            created_at: new Date().toISOString(),
-            cards: [],
-        };
+        // Try to sync with database if authenticated
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
 
-        addList(newList);
+        if (user) {
+            // Create in database
+            const { createList } = await import("@/lib/supabase/database");
+            const dbList = await createList(currentBoard.id, newListName.trim(), lists.length + 1);
+
+            if (dbList) {
+                addList(dbList);
+            }
+        } else {
+            // Demo mode - create locally
+            const newList: List = {
+                id: crypto.randomUUID(),
+                board_id: currentBoard?.id || "",
+                name: newListName.trim(),
+                position: lists.length + 1,
+                is_archived: false,
+                created_at: new Date().toISOString(),
+                cards: [],
+            };
+            addList(newList);
+        }
+
         setNewListName("");
         setIsAddingList(false);
     };

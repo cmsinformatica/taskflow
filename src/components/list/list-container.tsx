@@ -62,7 +62,7 @@ export function ListContainer({ list }: ListContainerProps) {
     const isOverLimit = list.wipLimit && cardCount > list.wipLimit;
     const isAtLimit = list.wipLimit && cardCount === list.wipLimit;
 
-    const handleAddCard = () => {
+    const handleAddCard = async () => {
         if (!newCardTitle.trim()) return;
 
         // Check WIP limit
@@ -71,39 +71,83 @@ export function ListContainer({ list }: ListContainerProps) {
             return;
         }
 
-        const newCard: Card = {
-            id: crypto.randomUUID(),
-            list_id: list.id,
-            title: newCardTitle.trim(),
-            position: cardCount + 1,
-            is_archived: false,
-            created_by: "",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-        };
+        // Try to sync with database if authenticated
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
 
-        addCard(list.id, newCard);
+        if (user) {
+            // Create in database
+            const { createCard } = await import("@/lib/supabase/database");
+            const dbCard = await createCard(list.id, newCardTitle.trim(), cardCount + 1);
+
+            if (dbCard) {
+                addCard(list.id, dbCard);
+            }
+        } else {
+            // Demo mode - create locally
+            const newCard: Card = {
+                id: crypto.randomUUID(),
+                list_id: list.id,
+                title: newCardTitle.trim(),
+                position: cardCount + 1,
+                is_archived: false,
+                created_by: "",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
+            addCard(list.id, newCard);
+        }
+
         setNewCardTitle("");
         setIsAddingCard(false);
     };
 
-    const handleSaveTitle = () => {
+    const handleSaveTitle = async () => {
         if (title.trim() && title !== list.name) {
             updateList(list.id, { name: title.trim() });
+
+            // Sync to database if authenticated
+            const { createClient } = await import("@/lib/supabase/client");
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { updateList: dbUpdateList } = await import("@/lib/supabase/database");
+                await dbUpdateList(list.id, { name: title.trim() });
+            }
         }
         setIsEditingTitle(false);
     };
 
-    const handleSaveWipLimit = () => {
+    const handleSaveWipLimit = async () => {
         const limit = wipLimit ? parseInt(wipLimit) : null;
         updateList(list.id, { wipLimit: limit });
+
+        // Sync to database if authenticated
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { updateList: dbUpdateList } = await import("@/lib/supabase/database");
+            await dbUpdateList(list.id, { wipLimit: limit });
+        }
+
         setIsSettingWip(false);
         setShowMenu(false);
     };
 
-    const handleDeleteList = () => {
+    const handleDeleteList = async () => {
         if (confirm("Tem certeza que deseja excluir esta lista?")) {
             deleteList(list.id);
+
+            // Sync to database if authenticated
+            const { createClient } = await import("@/lib/supabase/client");
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { deleteList: dbDeleteList } = await import("@/lib/supabase/database");
+                await dbDeleteList(list.id);
+            }
         }
         setShowMenu(false);
     };

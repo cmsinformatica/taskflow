@@ -91,21 +91,49 @@ export function CardModal() {
         setShowDueDate(false);
     };
 
-    const handleSaveTitle = () => {
+    const handleSaveTitle = async () => {
         if (title.trim()) {
             updateCard(selectedCard.list_id, selectedCard.id, { title: title.trim() });
+
+            // Sync to database if authenticated
+            const { createClient } = await import("@/lib/supabase/client");
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { updateCard: dbUpdateCard } = await import("@/lib/supabase/database");
+                await dbUpdateCard(selectedCard.id, { title: title.trim() });
+            }
         }
         setIsEditingTitle(false);
     };
 
-    const handleSaveDescription = (newDesc: string) => {
+    const handleSaveDescription = async (newDesc: string) => {
         setDescription(newDesc);
         updateCard(selectedCard.list_id, selectedCard.id, { description: newDesc });
+
+        // Sync to database if authenticated
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { updateCard: dbUpdateCard } = await import("@/lib/supabase/database");
+            await dbUpdateCard(selectedCard.id, { description: newDesc });
+        }
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (confirm("Tem certeza que deseja excluir este card?")) {
             deleteCard(selectedCard.list_id, selectedCard.id);
+
+            // Sync to database if authenticated
+            const { createClient } = await import("@/lib/supabase/client");
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { deleteCard: dbDeleteCard } = await import("@/lib/supabase/database");
+                await dbDeleteCard(selectedCard.id);
+            }
+
             handleClose();
         }
     };
@@ -118,50 +146,135 @@ export function CardModal() {
     };
 
     // Labels
-    const handleAddLabel = () => {
+    const handleAddLabel = async () => {
         if (!newLabelName.trim()) return;
-        const newLabel: Label = {
-            id: crypto.randomUUID(),
-            board_id: "",
-            name: newLabelName.trim(),
-            color: selectedLabelColor,
-        };
+
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        let newLabel: Label;
+
+        if (user && currentList) {
+            // Get board_id from list
+            const { data: listData } = await supabase
+                .from("lists")
+                .select("board_id")
+                .eq("id", currentList.id)
+                .single();
+
+            if (listData?.board_id) {
+                // Create label in database
+                const { createLabel, addLabelToCard } = await import("@/lib/supabase/database");
+                const dbLabel = await createLabel(listData.board_id, newLabelName.trim(), selectedLabelColor);
+
+                if (dbLabel) {
+                    newLabel = dbLabel;
+                    await addLabelToCard(selectedCard.id, dbLabel.id);
+                } else {
+                    return;
+                }
+            } else {
+                return;
+            }
+        } else {
+            newLabel = {
+                id: crypto.randomUUID(),
+                board_id: "",
+                name: newLabelName.trim(),
+                color: selectedLabelColor,
+            };
+        }
+
         const labels = [...(selectedCard.labels || []), newLabel];
         updateCard(selectedCard.list_id, selectedCard.id, { labels });
         setNewLabelName("");
         setShowLabels(false);
     };
 
-    const handleRemoveLabel = (labelId: string) => {
+    const handleRemoveLabel = async (labelId: string) => {
         const labels = selectedCard.labels?.filter((l) => l.id !== labelId) || [];
         updateCard(selectedCard.list_id, selectedCard.id, { labels });
+
+        // Sync to database if authenticated
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { removeLabelFromCard } = await import("@/lib/supabase/database");
+            await removeLabelFromCard(selectedCard.id, labelId);
+        }
     };
 
     // Checklists
-    const handleAddChecklist = () => {
+    const handleAddChecklist = async () => {
         if (!newChecklistTitle.trim()) return;
-        const newChecklist: Checklist = {
-            id: crypto.randomUUID(),
-            card_id: selectedCard.id,
-            title: newChecklistTitle.trim(),
-            position: (selectedCard.checklists?.length || 0) + 1,
-            items: [],
-        };
+
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        let newChecklist: Checklist;
+
+        if (user) {
+            const { createChecklist } = await import("@/lib/supabase/database");
+            const dbChecklist = await createChecklist(
+                selectedCard.id,
+                newChecklistTitle.trim(),
+                (selectedCard.checklists?.length || 0) + 1
+            );
+
+            if (dbChecklist) {
+                newChecklist = dbChecklist;
+            } else {
+                return;
+            }
+        } else {
+            newChecklist = {
+                id: crypto.randomUUID(),
+                card_id: selectedCard.id,
+                title: newChecklistTitle.trim(),
+                position: (selectedCard.checklists?.length || 0) + 1,
+                items: [],
+            };
+        }
+
         const checklists = [...(selectedCard.checklists || []), newChecklist];
         updateCard(selectedCard.list_id, selectedCard.id, { checklists });
         setNewChecklistTitle("");
         setShowChecklist(false);
     };
 
-    const handleAddChecklistItem = (checklistId: string) => {
+    const handleAddChecklistItem = async (checklistId: string) => {
         if (!newItemTitle.trim()) return;
-        const newItem: ChecklistItem = {
-            id: crypto.randomUUID(),
-            checklist_id: checklistId,
-            title: newItemTitle.trim(),
-            is_completed: false,
-            position: 0,
-        };
+
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        let newItem: ChecklistItem;
+
+        if (user) {
+            const { createChecklistItem } = await import("@/lib/supabase/database");
+            const checklist = selectedCard.checklists?.find(cl => cl.id === checklistId);
+            const position = (checklist?.items?.length || 0) + 1;
+            const dbItem = await createChecklistItem(checklistId, newItemTitle.trim(), position);
+
+            if (dbItem) {
+                newItem = dbItem;
+            } else {
+                return;
+            }
+        } else {
+            newItem = {
+                id: crypto.randomUUID(),
+                checklist_id: checklistId,
+                title: newItemTitle.trim(),
+                is_completed: false,
+                position: 0,
+            };
+        }
+
         const checklists = selectedCard.checklists?.map((cl) =>
             cl.id === checklistId
                 ? { ...cl, items: [...(cl.items || []), newItem] }
@@ -172,44 +285,88 @@ export function CardModal() {
         setAddingItemToChecklist(null);
     };
 
-    const handleToggleItem = (checklistId: string, itemId: string) => {
+    const handleToggleItem = async (checklistId: string, itemId: string) => {
+        const checklist = selectedCard.checklists?.find(cl => cl.id === checklistId);
+        const item = checklist?.items?.find(i => i.id === itemId);
+        const newValue = !item?.is_completed;
+
         const checklists = selectedCard.checklists?.map((cl) =>
             cl.id === checklistId
                 ? {
                     ...cl,
                     items: cl.items?.map((item) =>
                         item.id === itemId
-                            ? { ...item, is_completed: !item.is_completed }
+                            ? { ...item, is_completed: newValue }
                             : item
                     ),
                 }
                 : cl
         );
         updateCard(selectedCard.list_id, selectedCard.id, { checklists });
+
+        // Sync to database if authenticated
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { updateChecklistItem } = await import("@/lib/supabase/database");
+            await updateChecklistItem(itemId, newValue);
+        }
     };
 
-    const handleDeleteChecklist = (checklistId: string) => {
+    const handleDeleteChecklist = async (checklistId: string) => {
         const checklists = selectedCard.checklists?.filter((cl) => cl.id !== checklistId);
         updateCard(selectedCard.list_id, selectedCard.id, { checklists });
+
+        // Sync to database if authenticated
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { deleteChecklist } = await import("@/lib/supabase/database");
+            await deleteChecklist(checklistId);
+        }
     };
 
     // Due Date
-    const handleSaveDueDate = () => {
+    const handleSaveDueDate = async () => {
         updateCard(selectedCard.list_id, selectedCard.id, { due_date: dueDate || undefined });
+
+        // Sync to database if authenticated
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { updateCard: dbUpdateCard } = await import("@/lib/supabase/database");
+            await dbUpdateCard(selectedCard.id, { due_date: dueDate || undefined });
+        }
+
         setShowDueDate(false);
     };
 
     // Comments
-    const handleAddComment = () => {
+    const handleAddComment = async () => {
         if (!comment.trim()) return;
+
+        // Sync to database if authenticated
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
         const newComment = {
             id: crypto.randomUUID(),
             card_id: selectedCard.id,
-            user_id: "",
+            user_id: user?.id || "",
             content: comment.trim(),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
         };
+
+        if (user) {
+            const { createComment } = await import("@/lib/supabase/database");
+            await createComment(selectedCard.id, comment.trim());
+        }
+
         const comments = [...(selectedCard.comments || []), newComment];
         updateCard(selectedCard.list_id, selectedCard.id, { comments });
         setComment("");
