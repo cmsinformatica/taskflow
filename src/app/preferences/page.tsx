@@ -14,9 +14,12 @@ import {
     Moon,
     Sun,
     Monitor,
+    Crown,
+    Sparkles,
 } from "lucide-react";
 import { Button, Input } from "@/components/ui";
 import { usePreferencesStore, Preferences } from "@/store/preferences-store";
+import { useSubscription } from "@/hooks/use-subscription";
 
 const ACCENT_COLORS = [
     "#2A9D8F", // Teal (default)
@@ -28,6 +31,141 @@ const ACCENT_COLORS = [
     "#219EBC", // Blue
     "#606C38", // Olive
 ];
+
+// Account Section Component with Subscription Info
+function AccountSection({
+    preferences,
+    handleChange,
+}: {
+    preferences: Preferences;
+    handleChange: <K extends keyof Preferences>(key: K, value: Preferences[K]) => void;
+}) {
+    const { isPro, isTrialing, trialDaysLeft, plan } = useSubscription();
+
+    return (
+        <div className="space-y-8 animate-fade-in">
+            <div>
+                <h2 className="text-lg font-semibold text-[#264653] mb-1">Conta</h2>
+                <p className="text-sm text-[#6B7280]">Gerencie suas informações</p>
+            </div>
+
+            <div className="space-y-6">
+                {/* Subscription Plan */}
+                <div className="p-4 rounded-xl border-2 border-[#E0E0E0] bg-gradient-to-r from-[#F5F7F8] to-white">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            {isPro ? (
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FFB703] to-[#FB8500] flex items-center justify-center">
+                                    <Crown className="w-5 h-5 text-white" />
+                                </div>
+                            ) : (
+                                <div className="w-10 h-10 rounded-xl bg-[#E0E0E0] flex items-center justify-center">
+                                    <Sparkles className="w-5 h-5 text-[#6B7280]" />
+                                </div>
+                            )}
+                            <div>
+                                <p className="font-semibold text-[#264653]">
+                                    Plano {plan === "pro" ? "Pro" : isTrialing ? "Trial Pro" : "Gratuito"}
+                                </p>
+                                {isTrialing && trialDaysLeft > 0 && (
+                                    <p className="text-sm text-[#F4A261]">
+                                        {trialDaysLeft} dias restantes no trial
+                                    </p>
+                                )}
+                                {plan === "free" && (
+                                    <p className="text-sm text-[#6B7280]">
+                                        Recursos básicos disponíveis
+                                    </p>
+                                )}
+                                {plan === "pro" && !isTrialing && (
+                                    <p className="text-sm text-[#2A9D8F]">
+                                        Todos os recursos liberados
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        {!isPro && (
+                            <Link href="/pricing">
+                                <Button className="bg-gradient-to-r from-[#FFB703] to-[#FB8500] text-white rounded-xl">
+                                    <Crown className="w-4 h-4 mr-2" />
+                                    Upgrade Pro
+                                </Button>
+                            </Link>
+                        )}
+                    </div>
+
+                    {/* Plan Features */}
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex items-center gap-2">
+                            <Check className={`w-4 h-4 ${isPro ? "text-[#2A9D8F]" : "text-[#6B7280]"}`} />
+                            <span className="text-[#6B7280]">Boards ilimitados</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Check className={`w-4 h-4 ${isPro ? "text-[#2A9D8F]" : "text-[#E0E0E0]"}`} />
+                            <span className={isPro ? "text-[#6B7280]" : "text-[#E0E0E0]"}>Automações</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Check className={`w-4 h-4 ${isPro ? "text-[#2A9D8F]" : "text-[#E0E0E0]"}`} />
+                            <span className={isPro ? "text-[#6B7280]" : "text-[#E0E0E0]"}>Relatórios avançados</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Check className={`w-4 h-4 ${isPro ? "text-[#2A9D8F]" : "text-[#E0E0E0]"}`} />
+                            <span className={isPro ? "text-[#6B7280]" : "text-[#E0E0E0]"}>Suporte prioritário</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Display Name */}
+                <div>
+                    <label className="block text-sm font-medium text-[#2B2B2B] mb-2">
+                        Nome de exibição
+                    </label>
+                    <Input
+                        value={preferences.displayName}
+                        onChange={(e) => handleChange("displayName", e.target.value)}
+                        placeholder="Seu nome"
+                        className="max-w-md border-[#E0E0E0] rounded-xl"
+                    />
+                </div>
+
+                {/* Language */}
+                <div>
+                    <label className="block text-sm font-medium text-[#2B2B2B] mb-3">
+                        Idioma
+                    </label>
+                    <div className="flex flex-wrap gap-3">
+                        {[
+                            { value: "pt-BR", label: "Português" },
+                            { value: "en", label: "English" },
+                            { value: "es", label: "Español" },
+                        ].map((l) => (
+                            <button
+                                key={l.value}
+                                onClick={() => handleChange("language", l.value as Preferences["language"])}
+                                className={`px-4 py-2 rounded-xl border-2 text-sm transition-all ${preferences.language === l.value
+                                    ? "border-[#2A9D8F] bg-[#2A9D8F]/5 text-[#2A9D8F]"
+                                    : "border-[#E0E0E0] text-[#6B7280] hover:border-[#2A9D8F]/50"
+                                    }`}
+                            >
+                                {l.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Timezone */}
+                <div>
+                    <label className="block text-sm font-medium text-[#2B2B2B] mb-2">
+                        Fuso horário
+                    </label>
+                    <p className="text-[#6B7280] bg-[#F5F7F8] px-4 py-3 rounded-xl">
+                        {preferences.timezone}
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default function PreferencesPage() {
     const { preferences, setPreference, resetPreferences } = usePreferencesStore();
@@ -94,8 +232,8 @@ export default function PreferencesPage() {
                                     key={section.id}
                                     onClick={() => setActiveSection(section.id)}
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${activeSection === section.id
-                                            ? "bg-[#264653]/5 text-[#264653] font-medium"
-                                            : "text-[#6B7280] hover:bg-[#F5F7F8]"
+                                        ? "bg-[#264653]/5 text-[#264653] font-medium"
+                                        : "text-[#6B7280] hover:bg-[#F5F7F8]"
                                         }`}
                                 >
                                     <section.icon className="w-5 h-5" />
@@ -131,8 +269,8 @@ export default function PreferencesPage() {
                                                     key={theme.value}
                                                     onClick={() => handleChange("theme", theme.value as Preferences["theme"])}
                                                     className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${preferences.theme === theme.value
-                                                            ? "border-[#2A9D8F] bg-[#2A9D8F]/5"
-                                                            : "border-[#E0E0E0] hover:border-[#2A9D8F]/50"
+                                                        ? "border-[#2A9D8F] bg-[#2A9D8F]/5"
+                                                        : "border-[#E0E0E0] hover:border-[#2A9D8F]/50"
                                                         }`}
                                                 >
                                                     <theme.icon className="w-6 h-6 text-[#264653]" />
@@ -153,8 +291,8 @@ export default function PreferencesPage() {
                                                     key={color}
                                                     onClick={() => handleChange("accentColor", color)}
                                                     className={`w-10 h-10 rounded-xl transition-all ${preferences.accentColor === color
-                                                            ? "ring-2 ring-offset-2 ring-[#264653] scale-110"
-                                                            : "hover:scale-105"
+                                                        ? "ring-2 ring-offset-2 ring-[#264653] scale-110"
+                                                        : "hover:scale-105"
                                                         }`}
                                                     style={{ backgroundColor: color }}
                                                 />
@@ -177,8 +315,8 @@ export default function PreferencesPage() {
                                                     key={d.value}
                                                     onClick={() => handleChange("density", d.value as Preferences["density"])}
                                                     className={`px-4 py-2 rounded-xl border-2 text-sm transition-all ${preferences.density === d.value
-                                                            ? "border-[#2A9D8F] bg-[#2A9D8F]/5 text-[#2A9D8F]"
-                                                            : "border-[#E0E0E0] text-[#6B7280] hover:border-[#2A9D8F]/50"
+                                                        ? "border-[#2A9D8F] bg-[#2A9D8F]/5 text-[#2A9D8F]"
+                                                        : "border-[#E0E0E0] text-[#6B7280] hover:border-[#2A9D8F]/50"
                                                         }`}
                                                 >
                                                     {d.label}
@@ -202,8 +340,8 @@ export default function PreferencesPage() {
                                                     key={f.value}
                                                     onClick={() => handleChange("fontSize", f.value as Preferences["fontSize"])}
                                                     className={`px-4 py-2 rounded-xl border-2 text-sm transition-all ${preferences.fontSize === f.value
-                                                            ? "border-[#2A9D8F] bg-[#2A9D8F]/5 text-[#2A9D8F]"
-                                                            : "border-[#E0E0E0] text-[#6B7280] hover:border-[#2A9D8F]/50"
+                                                        ? "border-[#2A9D8F] bg-[#2A9D8F]/5 text-[#2A9D8F]"
+                                                        : "border-[#E0E0E0] text-[#6B7280] hover:border-[#2A9D8F]/50"
                                                         }`}
                                                 >
                                                     {f.label}
@@ -254,8 +392,8 @@ export default function PreferencesPage() {
                                                         key={e.value}
                                                         onClick={() => handleChange("emailDigest", e.value as Preferences["emailDigest"])}
                                                         className={`px-4 py-2 rounded-xl border-2 text-sm transition-all ${preferences.emailDigest === e.value
-                                                                ? "border-[#2A9D8F] bg-[#2A9D8F]/5 text-[#2A9D8F]"
-                                                                : "border-[#E0E0E0] text-[#6B7280] hover:border-[#2A9D8F]/50"
+                                                            ? "border-[#2A9D8F] bg-[#2A9D8F]/5 text-[#2A9D8F]"
+                                                            : "border-[#E0E0E0] text-[#6B7280] hover:border-[#2A9D8F]/50"
                                                             }`}
                                                     >
                                                         {e.label}
@@ -276,8 +414,8 @@ export default function PreferencesPage() {
                                                         key={hours}
                                                         onClick={() => handleChange("dueDateAlert", hours)}
                                                         className={`px-4 py-2 rounded-xl border-2 text-sm transition-all ${preferences.dueDateAlert === hours
-                                                                ? "border-[#2A9D8F] bg-[#2A9D8F]/5 text-[#2A9D8F]"
-                                                                : "border-[#E0E0E0] text-[#6B7280] hover:border-[#2A9D8F]/50"
+                                                            ? "border-[#2A9D8F] bg-[#2A9D8F]/5 text-[#2A9D8F]"
+                                                            : "border-[#E0E0E0] text-[#6B7280] hover:border-[#2A9D8F]/50"
                                                             }`}
                                                     >
                                                         {hours}h antes
@@ -364,8 +502,8 @@ export default function PreferencesPage() {
                                                         key={a.value}
                                                         onClick={() => handleChange("cardClickAction", a.value as Preferences["cardClickAction"])}
                                                         className={`px-4 py-2 rounded-xl border-2 text-sm transition-all ${preferences.cardClickAction === a.value
-                                                                ? "border-[#2A9D8F] bg-[#2A9D8F]/5 text-[#2A9D8F]"
-                                                                : "border-[#E0E0E0] text-[#6B7280] hover:border-[#2A9D8F]/50"
+                                                            ? "border-[#2A9D8F] bg-[#2A9D8F]/5 text-[#2A9D8F]"
+                                                            : "border-[#E0E0E0] text-[#6B7280] hover:border-[#2A9D8F]/50"
                                                             }`}
                                                     >
                                                         {a.label}
@@ -379,62 +517,10 @@ export default function PreferencesPage() {
 
                             {/* Conta */}
                             {activeSection === "account" && (
-                                <div className="space-y-8 animate-fade-in">
-                                    <div>
-                                        <h2 className="text-lg font-semibold text-[#264653] mb-1">Conta</h2>
-                                        <p className="text-sm text-[#6B7280]">Gerencie suas informações</p>
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        {/* Display Name */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-[#2B2B2B] mb-2">
-                                                Nome de exibição
-                                            </label>
-                                            <Input
-                                                value={preferences.displayName}
-                                                onChange={(e) => handleChange("displayName", e.target.value)}
-                                                placeholder="Seu nome"
-                                                className="max-w-md border-[#E0E0E0] rounded-xl"
-                                            />
-                                        </div>
-
-                                        {/* Language */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-[#2B2B2B] mb-3">
-                                                Idioma
-                                            </label>
-                                            <div className="flex flex-wrap gap-3">
-                                                {[
-                                                    { value: "pt-BR", label: "Português" },
-                                                    { value: "en", label: "English" },
-                                                    { value: "es", label: "Español" },
-                                                ].map((l) => (
-                                                    <button
-                                                        key={l.value}
-                                                        onClick={() => handleChange("language", l.value as Preferences["language"])}
-                                                        className={`px-4 py-2 rounded-xl border-2 text-sm transition-all ${preferences.language === l.value
-                                                                ? "border-[#2A9D8F] bg-[#2A9D8F]/5 text-[#2A9D8F]"
-                                                                : "border-[#E0E0E0] text-[#6B7280] hover:border-[#2A9D8F]/50"
-                                                            }`}
-                                                    >
-                                                        {l.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Timezone */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-[#2B2B2B] mb-2">
-                                                Fuso horário
-                                            </label>
-                                            <p className="text-[#6B7280] bg-[#F5F7F8] px-4 py-3 rounded-xl">
-                                                {preferences.timezone}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
+                                <AccountSection
+                                    preferences={preferences}
+                                    handleChange={handleChange}
+                                />
                             )}
 
                             {/* Privacidade */}
