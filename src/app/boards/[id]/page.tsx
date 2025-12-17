@@ -123,8 +123,9 @@ export default function BoardPage() {
 
     // Save lists to localStorage when they change
     useEffect(() => {
-        if (lists.length > 0) {
-            localStorage.setItem(`taskflow-lists-${boardId}`, JSON.stringify(lists));
+        if (lists.length > 0 && boardId) {
+            const dataToSave = JSON.stringify(lists);
+            localStorage.setItem(`taskflow-lists-${boardId}`, dataToSave);
         }
     }, [lists, boardId]);
 
