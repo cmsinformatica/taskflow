@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { LayoutGrid, Mail, Lock, User, ArrowRight } from "lucide-react";
+import { LayoutGrid, Mail, Lock, User, ArrowRight, Crown } from "lucide-react";
 import { Button, Input } from "@/components/ui";
+import { useSubscriptionStore } from "@/store/subscription-store";
 
 const isSupabaseConfigured = !!(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -13,6 +14,7 @@ const isSupabaseConfigured = !!(
 
 export default function RegisterPage() {
     const router = useRouter();
+    const { initTrial } = useSubscriptionStore();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -45,6 +47,8 @@ export default function RegisterPage() {
                 created_at: new Date().toISOString(),
             };
             localStorage.setItem("taskflow-demo-user", JSON.stringify(demoUser));
+            // Initialize 15-day Pro trial
+            initTrial(demoUser.id);
             router.push("/dashboard");
             return;
         }
@@ -65,6 +69,8 @@ export default function RegisterPage() {
             if (error) {
                 setError("Algo não saiu como esperado. Tente novamente.");
             } else {
+                // Initialize 15-day Pro trial for new user
+                initTrial(email);
                 router.push("/dashboard");
                 router.refresh();
             }
