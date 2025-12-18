@@ -64,6 +64,9 @@ export default function PricingPage() {
                 return;
             }
 
+            // DEBUG: Confirmação visual do email
+            alert(`Iniciando checkout para: ${user.email}`);
+
             const response = await fetch("/api/stripe/checkout", {
                 method: "POST",
                 headers: {
