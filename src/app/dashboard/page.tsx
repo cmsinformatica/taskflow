@@ -17,6 +17,7 @@ import {
     Menu,
     X,
     Crown,
+    ShieldAlert,
 } from "lucide-react";
 import { Board } from "@/types";
 import { TrialBanner, TrialBadge } from "@/components/subscription";
@@ -49,6 +50,7 @@ export default function DashboardPage() {
     );
     const [searchQuery, setSearchQuery] = useState("");
     const [user, setUser] = useState<{ email?: string; full_name?: string } | null>(null);
+    const [isAdmin, setIsAdmin] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -68,9 +70,13 @@ export default function DashboardPage() {
                     setBoards(dbBoards);
                 }
                 setUser({
-                    email: authUser.email,
                     full_name: authUser.user_metadata?.full_name,
                 });
+
+                // Check Admin Access quietly
+                fetch("/api/admin/stats").then((res) => {
+                    if (res.ok) setIsAdmin(true);
+                }).catch(() => { });
             } else {
                 // Demo mode - use localStorage
                 const demoUser = localStorage.getItem("taskflow-demo-user");
@@ -248,6 +254,15 @@ export default function DashboardPage() {
                         <Crown className="w-5 h-5" />
                         Planos
                     </Link>
+                    {isAdmin && (
+                        <Link
+                            href="/admin"
+                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#E76F51] hover:bg-[#E76F51]/10 transition-colors"
+                        >
+                            <ShieldAlert className="w-5 h-5" />
+                            Portal Admin
+                        </Link>
+                    )}
                 </nav>
 
                 {/* Trial Badge */}
