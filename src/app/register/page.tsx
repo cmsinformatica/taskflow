@@ -56,7 +56,7 @@ export default function RegisterPage() {
         try {
             const { createClient } = await import("@/lib/supabase/client");
             const supabase = createClient();
-            const { error } = await supabase.auth.signUp({
+            const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
@@ -68,6 +68,9 @@ export default function RegisterPage() {
 
             if (error) {
                 setError("Algo não saiu como esperado. Tente novamente.");
+            } else if (data.user && !data.session) {
+                setError("Conta criada! Por favor, verifique seu email para confirmar o cadastro.");
+                // Opcional: Impedir novas tentativas ou mudar visual
             } else {
                 // Initialize 15-day Pro trial for new user
                 initTrial(email);

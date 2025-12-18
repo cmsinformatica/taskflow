@@ -449,9 +449,9 @@ export async function getSubscription(): Promise<Subscription | null> {
     if (!user) return null;
 
     const { data, error } = await supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("user_id", user.id)
+        .from("profiles")
+        .select("subscription_status, stripe_customer_id, stripe_subscription_id, trial_end")
+        .eq("id", user.id)
         .single();
 
     if (error) {
@@ -459,15 +459,20 @@ export async function getSubscription(): Promise<Subscription | null> {
         return null;
     }
 
+    // Map profiles data to Subscription object
+    // Default to 'free'/null if data is missing
+    const status = data.subscription_status || "free";
+    const isPro = status === "active" || status === "trialing";
+
     return {
-        userId: data.user_id,
-        plan: data.plan,
-        status: data.status,
-        trialEndsAt: data.trial_ends_at,
+        userId: user.id,
+        plan: isPro ? "pro" : "free",
+        status: status as any,
+        trialEndsAt: data.trial_end,
         stripeCustomerId: data.stripe_customer_id,
         stripeSubscriptionId: data.stripe_subscription_id,
-        currentPeriodEnd: data.current_period_end,
-        createdAt: data.created_at,
+        currentPeriodEnd: null, // Not stored in profiles currently
+        createdAt: new Date().toISOString(), // Placeholder
     };
 }
 
