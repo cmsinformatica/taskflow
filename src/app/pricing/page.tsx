@@ -19,6 +19,7 @@ import {
     Users,
 } from "lucide-react";
 import { Button } from "@/components/ui";
+import { createClient } from "@/lib/supabase/client";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PRO_PRICE } from "@/types/subscription";
 
@@ -53,9 +54,15 @@ export default function PricingPage() {
         setIsLoading(true);
 
         try {
-            // Get user from localStorage
-            const demoUser = localStorage.getItem("taskflow-demo-user");
-            const user = demoUser ? JSON.parse(demoUser) : null;
+            // Get user from Supabase
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+                // Redirect to login if not authenticated
+                window.location.href = "/login?redirectTo=/pricing";
+                return;
+            }
 
             const response = await fetch("/api/stripe/checkout", {
                 method: "POST",
@@ -63,8 +70,8 @@ export default function PricingPage() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    userId: user?.id || "anonymous",
-                    email: user?.email || "user@example.com",
+                    userId: user.id,
+                    email: user.email,
                 }),
             });
 
