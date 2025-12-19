@@ -95,8 +95,8 @@ export const useBoardStore = create<BoardState>()(
                 })),
 
             updateCard: (listId, cardId, updates) =>
-                set((state) => ({
-                    lists: state.lists.map((list) =>
+                set((state) => {
+                    const updatedLists = state.lists.map((list) =>
                         list.id === listId
                             ? {
                                 ...list,
@@ -105,8 +105,19 @@ export const useBoardStore = create<BoardState>()(
                                 ),
                             }
                             : list
-                    ),
-                })),
+                    );
+
+                    // Sync selectedCard if it matches
+                    const updatedSelectedCard =
+                        state.selectedCard?.id === cardId
+                            ? { ...state.selectedCard, ...updates }
+                            : state.selectedCard;
+
+                    return {
+                        lists: updatedLists,
+                        selectedCard: updatedSelectedCard,
+                    };
+                }),
 
             deleteCard: (listId, cardId) =>
                 set((state) => ({

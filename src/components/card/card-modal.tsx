@@ -6,6 +6,7 @@ import { Modal, Button, Input } from "@/components/ui";
 import { RichEditor } from "./rich-editor";
 import { RecurringSelector } from "./recurring-selector";
 import { PomodoroTimer } from "./pomodoro-timer";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Label, Checklist, ChecklistItem } from "@/types";
 import {
     X,
@@ -46,6 +47,8 @@ export function CardModal() {
         startTimer,
         stopTimer,
     } = useBoardStore();
+
+    const { canUseFeature } = useSubscription();
 
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [title, setTitle] = useState("");
@@ -748,13 +751,22 @@ export function CardModal() {
                         />
 
                         {/* Focus Mode */}
-                        <button
-                            onClick={handleFocusMode}
-                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-[#2A9D8F]/10 hover:bg-[#2A9D8F]/20 text-sm text-[#2A9D8F] transition-colors"
-                        >
-                            <Focus className="w-4 h-4" />
-                            Modo Foco
-                        </button>
+                        <div className="space-y-2">
+                            {canUseFeature("focusMode") ? (
+                                <button
+                                    onClick={handleFocusMode}
+                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-[#2A9D8F]/10 hover:bg-[#2A9D8F]/20 text-sm text-[#2A9D8F] transition-colors"
+                                >
+                                    <Focus className="w-4 h-4" />
+                                    Modo Foco
+                                </button>
+                            ) : (
+                                <div className="opacity-50 cursor-not-allowed w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm text-gray-400">
+                                    <Focus className="w-4 h-4" />
+                                    Modo Foco (Pro)
+                                </div>
+                            )}
+                        </div>
 
                         <hr className="my-4 border-[#E0E0E0] dark:border-[#334155]" />
 
