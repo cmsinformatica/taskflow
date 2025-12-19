@@ -11,6 +11,10 @@ interface BoardState {
     currentBoard: Board | null;
     setCurrentBoard: (board: Board | null) => void;
 
+    // All boards (for dashboard caching)
+    boards: Board[];
+    setBoards: (boards: Board[]) => void;
+
     // Lists
     lists: List[];
     setLists: (lists: List[]) => void;
@@ -65,6 +69,9 @@ export const useBoardStore = create<BoardState>()(
 
             currentBoard: null,
             setCurrentBoard: (board) => set({ currentBoard: board }),
+
+            boards: [],
+            setBoards: (boards) => set({ boards }),
 
             lists: [],
             setLists: (lists) => set({ lists }),

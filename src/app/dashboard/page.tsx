@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useBoardStore } from "@/store/board-store";
 import { createClient } from "@/lib/supabase/client";
 import { BoardCard } from "@/components/board";
 import { Button, Input, Modal, DailyAchievements } from "@/components/ui";
@@ -42,7 +43,7 @@ export default function DashboardPage() {
     const router = useRouter();
     const supabase = createClient();
 
-    const [boards, setBoards] = useState<Board[]>([]);
+    const { boards, setBoards } = useBoardStore(); // Use global store
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newBoardName, setNewBoardName] = useState("");
     const [selectedBackground, setSelectedBackground] = useState(
@@ -52,33 +53,35 @@ export default function DashboardPage() {
     const [user, setUser] = useState<{ email?: string; full_name?: string } | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    // Only show loading if we have NO boards cached
+    const [isLoading, setIsLoading] = useState(boards.length === 0);
 
     // Load boards from database
     useEffect(() => {
         const loadData = async () => {
-            setIsLoading(true);
+            // Don't set isLoading(true) here effectively to avoid flickering if we have cache
 
-            // Try to load from Supabase first
             const { data: { user: authUser } } = await supabase.auth.getUser();
 
             if (authUser) {
-                // User is logged in, load from database
+                setUser({
+                    full_name: authUser.user_metadata?.full_name,
+                });
+
+                // Load from database (background update)
                 const { getBoards } = await import("@/lib/supabase/database");
                 const dbBoards = await getBoards();
                 if (dbBoards.length > 0) {
                     setBoards(dbBoards);
                 }
-                setUser({
-                    full_name: authUser.user_metadata?.full_name,
-                });
+                setIsLoading(false); // Ensure loading is off after fetch
 
                 // Check Admin Access quietly
                 fetch("/api/admin/stats").then((res) => {
                     if (res.ok) setIsAdmin(true);
                 }).catch(() => { });
             } else {
-                // Demo mode - use localStorage
+                // Demo mode
                 const demoUser = localStorage.getItem("taskflow-demo-user");
                 if (demoUser) {
                     setUser(JSON.parse(demoUser));
@@ -94,13 +97,12 @@ export default function DashboardPage() {
                         console.error("Error loading boards:", e);
                     }
                 }
+                setIsLoading(false);
             }
-
-            setIsLoading(false);
         };
 
         loadData();
-    }, [supabase.auth]);
+    }, [supabase.auth, setBoards]);
 
     const handleCreateBoard = async () => {
         if (!newBoardName.trim()) return;

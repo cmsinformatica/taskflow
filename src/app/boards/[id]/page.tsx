@@ -114,12 +114,13 @@ export default function BoardPage() {
                 // User is logged in - load from database
                 const { getLists } = await import("@/lib/supabase/database");
 
-                // Load board info
-                const { data: boardData } = await supabase
-                    .from("boards")
-                    .select("*")
-                    .eq("id", boardId)
-                    .single();
+                // Execute requests in parallel
+                const [boardResponse, dbLists] = await Promise.all([
+                    supabase.from("boards").select("*").eq("id", boardId).single(),
+                    getLists(boardId)
+                ]);
+
+                const { data: boardData } = boardResponse;
 
                 if (boardData) {
                     setCurrentBoard({
@@ -134,8 +135,6 @@ export default function BoardPage() {
                     });
                 }
 
-                // Load lists with cards
-                const dbLists = await getLists(boardId);
                 if (dbLists.length > 0) {
                     setLists(dbLists);
                 } else {
