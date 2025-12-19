@@ -115,7 +115,7 @@ export default function DashboardPage() {
             const newBoard = await createBoard(newBoardName.trim(), selectedBackground);
 
             if (newBoard) {
-                setBoards((prev) => [...prev, newBoard]);
+                setBoards([...boards, newBoard]);
                 setNewBoardName("");
                 setSelectedBackground(BOARD_BACKGROUNDS[0]);
                 setIsCreateModalOpen(false);
