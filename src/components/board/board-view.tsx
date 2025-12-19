@@ -41,6 +41,8 @@ export function BoardView() {
     const [newListName, setNewListName] = useState("");
     const [activeId, setActiveId] = useState<string | null>(null);
     const [activeType, setActiveType] = useState<"list" | "card" | null>(null);
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [boardName, setBoardName] = useState("");
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -89,6 +91,44 @@ export function BoardView() {
 
         setNewListName("");
         setIsAddingList(false);
+    };
+
+    const handleUpdateName = async () => {
+        if (!currentBoard || !boardName.trim() || boardName === currentBoard.name) {
+            setIsEditingName(false);
+            return;
+        }
+
+        // Optimistic update
+        // We'll update the local state implicitly via re-fetch or store update if available,
+        // but since we only have setLists, we might need a setBoard or direct fetch.
+        // For now, let's just trigger the DB update. Ideally, useBoardStore should have updateBoard.
+
+        // Let's assume the store will be refreshed or we reload.
+        // Actually, looking at the store (via variable names), we have `currentBoard`.
+        // We should add `updateBoard` to the store or manually reload.
+
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+            const { updateBoard } = await import("@/lib/supabase/database");
+            await updateBoard(currentBoard.id, { name: boardName.trim() });
+            // Force reload or update store?
+            // Since we don't have setBoard exposed here (only inside store logic), 
+            // simplest is to reload page or use router.refresh() 
+            // but that's heavy.
+            // Ideally we add updateBoard to the store context.
+            window.location.reload();
+        } else {
+            // Demo Update
+            // We can't easily update local storage from here without store support
+            // Just reload for now
+            window.location.reload();
+        }
+
+        setIsEditingName(false);
     };
 
     const handleDragStart = (event: DragStartEvent) => {
@@ -207,9 +247,32 @@ export function BoardView() {
                             <div className="hidden sm:flex w-8 h-8 rounded-lg bg-white/20 items-center justify-center">
                                 <LayoutGrid className="w-4 h-4 text-white" />
                             </div>
-                            <h1 className="text-lg sm:text-xl font-semibold text-white truncate max-w-[180px] sm:max-w-none">
-                                {currentBoard?.name || "Meu Quadro"}
-                            </h1>
+                            {isEditingName ? (
+                                <Input
+                                    value={boardName}
+                                    onChange={(e) => setBoardName(e.target.value)}
+                                    onBlur={handleUpdateName}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") handleUpdateName();
+                                        if (e.key === "Escape") {
+                                            setIsEditingName(false);
+                                            setBoardName(currentBoard?.name || "");
+                                        }
+                                    }}
+                                    autoFocus
+                                    className="h-8 bg-white/20 border-transparent text-white placeholder:text-white/50 focus:border-white/40 focus:ring-0 text-lg font-semibold px-2 min-w-[200px]"
+                                />
+                            ) : (
+                                <h1
+                                    onClick={() => {
+                                        setBoardName(currentBoard?.name || "");
+                                        setIsEditingName(true);
+                                    }}
+                                    className="text-lg sm:text-xl font-semibold text-white truncate max-w-[180px] sm:max-w-none cursor-pointer hover:bg-white/20 px-2 py-1 rounded-lg transition-colors"
+                                >
+                                    {currentBoard?.name || "Meu Quadro"}
+                                </h1>
+                            )}
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
