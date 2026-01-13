@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useBoardStore } from "@/store/board-store";
 import { BoardView } from "@/components/board";
 import { Board, List } from "@/types";
@@ -90,9 +90,11 @@ const DEMO_LISTS: List[] = [
 
 export default function BoardPage() {
     const params = useParams();
+    const router = useRouter();
     const boardId = params.id as string;
     const { currentBoard, setCurrentBoard, setLists, lists } = useBoardStore();
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
     const supabase = createClient();
 
     // Update page title when board changes
@@ -113,30 +115,37 @@ export default function BoardPage() {
             setIsAuthenticated(!!user);
 
             if (user) {
-                // User is logged in - load from database
+                // User is logged in - load from database with authorization check
                 const { getLists } = await import("@/lib/supabase/database");
 
-                // Execute requests in parallel
-                const [boardResponse, dbLists] = await Promise.all([
-                    supabase.from("boards").select("*").eq("id", boardId).single(),
-                    getLists(boardId)
-                ]);
+                // Fetch board - RLS will only return if user owns it
+                const { data: boardData, error: boardError } = await supabase
+                    .from("boards")
+                    .select("*")
+                    .eq("id", boardId)
+                    .single();
 
-                const { data: boardData } = boardResponse;
-
-                if (boardData) {
-                    setCurrentBoard({
-                        id: boardData.id,
-                        workspace_id: boardData.workspace_id || "",
-                        name: boardData.name,
-                        background: boardData.background,
-                        is_public: boardData.is_public,
-                        created_by: boardData.created_by,
-                        created_at: boardData.created_at,
-                        updated_at: boardData.updated_at,
-                    });
+                // SECURITY: If board not found or not authorized, redirect
+                if (boardError || !boardData) {
+                    console.error("Board not found or access denied:", boardError);
+                    setIsAuthorized(false);
+                    router.push("/dashboard");
+                    return;
                 }
 
+                setIsAuthorized(true);
+                setCurrentBoard({
+                    id: boardData.id,
+                    workspace_id: boardData.workspace_id || "",
+                    name: boardData.name,
+                    background: boardData.background,
+                    is_public: boardData.is_public,
+                    created_by: boardData.created_by,
+                    created_at: boardData.created_at,
+                    updated_at: boardData.updated_at,
+                });
+
+                const dbLists = await getLists(boardId);
                 if (dbLists.length > 0) {
                     setLists(dbLists);
                 } else {
@@ -168,11 +177,12 @@ export default function BoardPage() {
                 } else {
                     setLists(DEMO_LISTS);
                 }
+                setIsAuthorized(true); // Demo mode always authorized
             }
         };
 
         loadData();
-    }, [boardId, setCurrentBoard, setLists, supabase]);
+    }, [boardId, setCurrentBoard, setLists, supabase, router]);
 
     // Save lists to localStorage when they change (demo mode only)
     useEffect(() => {
@@ -182,5 +192,20 @@ export default function BoardPage() {
         }
     }, [lists, boardId, isAuthenticated]);
 
+    // Show loading while checking authorization
+    if (isAuthorized === null) {
+        return (
+            <div className="min-h-screen bg-[#F5F7F8] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#264653]"></div>
+            </div>
+        );
+    }
+
+    // Don't render if not authorized (should have redirected, but safety check)
+    if (!isAuthorized) {
+        return null;
+    }
+
     return <BoardView />;
 }
+
