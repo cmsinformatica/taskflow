@@ -1,13 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import type { User } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export async function updateSession(request: NextRequest) {
+export async function updateSession(request: NextRequest): Promise<{ response: NextResponse; user: User | null; isAdmin: boolean }> {
     // Skip Supabase if not configured (demo mode)
     if (!supabaseUrl || !supabaseAnonKey) {
-        return NextResponse.next({ request });
+        return { response: NextResponse.next({ request }), user: null, isAdmin: false };
     }
 
     let supabaseResponse = NextResponse.next({
@@ -46,8 +47,33 @@ export async function updateSession(request: NextRequest) {
     ) {
         const url = request.nextUrl.clone();
         url.pathname = "/login";
-        return NextResponse.redirect(url);
+        return { response: NextResponse.redirect(url), user: null, isAdmin: false };
     }
 
-    return supabaseResponse;
+    // Check admin status from database
+    let isAdmin = false;
+    if (user) {
+        // First check env var (fast path)
+        const adminEmail = process.env.ADMIN_EMAIL;
+        if (adminEmail && user.email === adminEmail) {
+            isAdmin = true;
+        } else {
+            // Check database is_admin column
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("is_admin")
+                .eq("id", user.id)
+                .single();
+
+            isAdmin = profile?.is_admin === true;
+        }
+    }
+
+    return { response: supabaseResponse, user, isAdmin };
+}
+
+// Legacy function for backward compatibility
+export function checkAdminEmail(email: string | undefined): boolean {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    return !!adminEmail && email === adminEmail;
 }

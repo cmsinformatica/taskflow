@@ -26,10 +26,15 @@ export default function LoginPage() {
         if (!isSupabaseConfigured) {
             const savedUser = localStorage.getItem("taskflow-demo-user");
             if (savedUser) {
-                const user = JSON.parse(savedUser);
-                if (user.email === email) {
-                    router.push("/dashboard");
-                    return;
+                try {
+                    const user = JSON.parse(savedUser);
+                    if (user.email === email) {
+                        router.push("/dashboard");
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Error parsing saved user:", e);
+                    localStorage.removeItem("taskflow-demo-user");
                 }
             }
             const demoUser = {

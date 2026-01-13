@@ -98,7 +98,9 @@ export default function BoardPage() {
     // Update page title when board changes
     useEffect(() => {
         if (currentBoard?.name) {
-            document.title = `${currentBoard.name} | Boardzen`;
+            // Sanitize board name to prevent XSS
+            const safeTitle = currentBoard.name.replace(/[<>]/g, "");
+            document.title = `${safeTitle} | Boardzen`;
         } else {
             document.title = "Boardzen";
         }
@@ -144,16 +146,25 @@ export default function BoardPage() {
                 // Demo mode - use localStorage
                 const savedBoards = localStorage.getItem("taskflow-boards");
                 if (savedBoards) {
-                    const boards: Board[] = JSON.parse(savedBoards);
-                    const board = boards.find((b) => b.id === boardId);
-                    if (board) {
-                        setCurrentBoard(board);
+                    try {
+                        const boards: Board[] = JSON.parse(savedBoards);
+                        const board = boards.find((b) => b.id === boardId);
+                        if (board) {
+                            setCurrentBoard(board);
+                        }
+                    } catch (e) {
+                        console.error("Error parsing boards:", e);
                     }
                 }
 
                 const savedLists = localStorage.getItem(`taskflow-lists-${boardId}`);
                 if (savedLists) {
-                    setLists(JSON.parse(savedLists));
+                    try {
+                        setLists(JSON.parse(savedLists));
+                    } catch (e) {
+                        console.error("Error parsing lists:", e);
+                        setLists(DEMO_LISTS);
+                    }
                 } else {
                     setLists(DEMO_LISTS);
                 }

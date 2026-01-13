@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId, email } = await request.json();
+        // SECURITY FIX: Validate user from session, not from request body
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
 
-        if (!userId) {
+        if (!user || !user.email) {
             return NextResponse.json(
-                { error: "User ID is required" },
-                { status: 400 }
+                { error: "Unauthorized - Please login" },
+                { status: 401 }
             );
         }
+
+        // Use authenticated user data, ignore any userId/email from request body
+        const userId = user.id;
+        const email = user.email;
 
         // Get or create customer
         let customerId: string;
@@ -64,3 +71,4 @@ export async function POST(request: NextRequest) {
         );
     }
 }
+
